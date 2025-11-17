@@ -44,18 +44,26 @@ class Pet extends Model
     /**
      * Generate unique registration code for the pet.
      * Format: HHMMXXXXYYYY
-     * - HHMM: hour and minute when data is saved
-     * - XXXX: 4-digit owner ID (left padded)
-     * - YYYY: pet sequence number
+     * - HHMM: hour and minute when data is saved (24-hour format)
+     * - XXXX: 4-digit owner ID (left padded with zeros)
+     * - YYYY: pet sequence number (left padded with zeros)
+     * 
+     * Example: 103000120002
+     * - 1030: saved at 10:30
+     * - 0012: owner_id = 12
+     * - 0002: 2nd pet of this owner
      */
     public static function generateRegistrationCode(int $ownerId): string
     {
-        $hhmm = now()->format('Hi');
+        // HHMM: Current hour and minute (4 digits)
+        $hhmm = now()->format('Hi'); // Hi = 24-hour format without separator (e.g., 1030, 1430)
+        
+        // XXXX: Owner ID padded to 4 digits
         $ownerIdPadded = str_pad($ownerId, 4, '0', STR_PAD_LEFT);
         
-        // Get the next sequence number for this owner
-        $lastPet = self::where('owner_id', $ownerId)->orderBy('id', 'desc')->first();
-        $sequence = $lastPet ? (self::where('owner_id', $ownerId)->count() + 1) : 1;
+        // YYYY: Pet sequence number for this owner (padded to 4 digits)
+        $petsCount = self::where('owner_id', $ownerId)->count();
+        $sequence = $petsCount + 1;
         $sequencePadded = str_pad($sequence, 4, '0', STR_PAD_LEFT);
         
         return $hhmm . $ownerIdPadded . $sequencePadded;
